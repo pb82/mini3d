@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/pb82/mini3d/api"
 	"image"
 	"image/color"
 	"log"
-	"mini3d/api"
 
 	_ "embed"
 	_ "image/png"
