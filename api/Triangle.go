@@ -1,6 +1,8 @@
 package api
 
-import "image/color"
+import (
+	"image/color"
+)
 
 // Triangle represents a single triangle
 type Triangle struct {
@@ -58,8 +60,8 @@ func vectorIntersectPlane(p, n, start, end *Vector3d, t *float64) Vector3d {
 func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *Triangle) int {
 	n.Normalize()
 
-	dist := func(p *Vector3d) float64 {
-		return n.X*p.X + n.Y*p.Y + n.Z*p.Z - n.Dot(p)
+	dist := func(point *Vector3d) float64 {
+		return n.X*point.X + n.Y*point.Y + n.Z*point.Z - n.Dot(p)
 	}
 
 	d0 := dist(&t.Vertices[0])
@@ -71,7 +73,7 @@ func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *
 	insidePoints := [3]*Vector3d{}
 	insideUVs := [3]*VectorUv{}
 	outsidePointCount := 0
-	outsideTexCount := 0
+	outsideUVsCount := 0
 	outsidePoints := [3]*Vector3d{}
 	outsideUVs := [3]*VectorUv{}
 
@@ -85,8 +87,8 @@ func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *
 	} else {
 		outsidePoints[outsidePointCount] = &t.Vertices[0]
 		outsidePointCount += 1
-		outsideUVs[outsideTexCount] = &t.UVs[0]
-		outsideTexCount += 1
+		outsideUVs[outsideUVsCount] = &t.UVs[0]
+		outsideUVsCount += 1
 	}
 
 	if d1 >= 0 {
@@ -97,8 +99,8 @@ func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *
 	} else {
 		outsidePoints[outsidePointCount] = &t.Vertices[1]
 		outsidePointCount += 1
-		outsideUVs[outsideTexCount] = &t.UVs[1]
-		outsideTexCount += 1
+		outsideUVs[outsideUVsCount] = &t.UVs[1]
+		outsideUVsCount += 1
 	}
 
 	if d2 >= 0 {
@@ -109,8 +111,8 @@ func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *
 	} else {
 		outsidePoints[outsidePointCount] = &t.Vertices[2]
 		outsidePointCount += 1
-		outsideUVs[outsideTexCount] = &t.UVs[2]
-		outsideTexCount += 1
+		outsideUVs[outsideUVsCount] = &t.UVs[2]
+		outsideUVsCount += 1
 	}
 
 	// No points of the triangle are inside screen boundaries, the
