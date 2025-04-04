@@ -3,6 +3,7 @@ package api
 import (
 	"image/color"
 	"math"
+	"time"
 )
 
 type UserData interface{}
@@ -61,6 +62,13 @@ type Engine struct {
 
 	// yOrigin set the position of the (0/0) coordinate
 	yOrigin YOrigin
+
+	// Metrics contains performance indicators
+	Metrics Metrics
+}
+
+func timestamp() float64 {
+	return float64(time.Now().UnixMilli())
 }
 
 // AddMesh adds a mesh to the engine in order to be rendered
@@ -68,10 +76,42 @@ func (e *Engine) AddMesh(mesh Mesh) {
 	e.meshes = append(e.meshes, mesh)
 }
 
+// Translate translates all meshes
+func (e *Engine) Translate(x, y, z float64) {
+	e.trans.Translate(x, y, z)
+}
+
+// RotateX rotates all meshes on the X axis
+func (e *Engine) RotateX(radians float64) {
+	e.rotX.RotateX(radians)
+}
+
+// RotateY rotates all meshes on the Y axis
+func (e *Engine) RotateY(radians float64) {
+	e.rotY.RotateY(radians)
+}
+
+// RotateZ rotates all meshes on the Z axis
+func (e *Engine) RotateZ(radians float64) {
+	e.rotZ.RotateZ(radians)
+}
+
+// SetCameraPosition sets the camera to the given position
+func (e *Engine) SetCameraPosition(x, y, z float64) {
+	e.camera.X = x
+	e.camera.Y = y
+	e.camera.Z = z
+}
+
+// MoveCamera the camera by the given offsets
+func (e *Engine) MoveCamera(dx, dy, dz float64) {
+	e.camera.X += dx
+	e.camera.Y += dy
+	e.camera.Z += dz
+}
+
 // Update recalculates the world matrix
 func (e *Engine) Update() {
-	e.trans.Translate(0, 0, 5)
-
 	// Always start from the identity matrix
 	e.world = Identity4x4()
 
@@ -81,7 +121,6 @@ func (e *Engine) Update() {
 	e.world = e.world.MulM(&e.rotZ)
 	e.world = e.world.MulM(&e.trans)
 
-	//
 	up := Vector3d{X: 0, Y: 1, Z: 0}
 	target := Vector3d{X: 0, Y: 0, Z: 1}
 
@@ -375,9 +414,10 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 }
 
 // renderMesh renders a single mesh
-func (e *Engine) renderMesh(mesh Mesh, userData UserData) {
+func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
 	// trianglesToRaster holds all visible triangles
 	var trianglesToRaster []Triangle
+	totalTrianglesRendered := 0
 
 	for _, triangle := range mesh {
 		// make copies of all triangle to avoid in place modification
@@ -488,17 +528,27 @@ func (e *Engine) renderMesh(mesh Mesh, userData UserData) {
 
 		for _, t := range finalTrianglesList {
 			e.drawTriangle(&t, userData)
+			totalTrianglesRendered++
 		}
 	}
+
+	return totalTrianglesRendered
 }
 
 // Render renders all meshes
 func (e *Engine) Render(userData UserData) {
+	start := time.Now().UnixMilli()
+
 	e.depthBuffer.Clear()
 
+	totalTrianglesRendered := 0
 	for _, mesh := range e.meshes {
-		e.renderMesh(mesh, userData)
+		totalTrianglesRendered += e.renderMesh(mesh, userData)
 	}
+
+	finish := time.Now().UnixMilli()
+	e.Metrics.RenderTime = finish - start
+	e.Metrics.Triangles = totalTrianglesRendered
 }
 
 // NewEngine creates a new 3d engine instance with the given internal
@@ -511,9 +561,9 @@ func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOpti
 	engine.rotZ = Identity4x4()
 	engine.trans = Identity4x4()
 	engine.camera = Vector3d{
-		X: 0.5,
-		Y: 0.5,
-		Z: 4.5,
+		X: 0,
+		Y: 0,
+		Z: 0,
 		W: 1,
 	}
 
