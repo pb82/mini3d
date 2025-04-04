@@ -1,5 +1,7 @@
 package api
 
+import "fmt"
+
 type DepthBuffer struct {
 	Entries []float64
 	w       int
@@ -12,7 +14,11 @@ func (d *DepthBuffer) Clear() {
 }
 
 func (d *DepthBuffer) At(x, y int) float64 {
-	return d.Entries[y*d.w+x]
+	pos := y*d.w + x
+	if pos >= len(d.Entries) {
+		panic(fmt.Sprintf("out of bounds: %v / %v -> %v %v", x, y, pos, d.w))
+	}
+	return d.Entries[pos]
 }
 
 func (d *DepthBuffer) Set(x, y int, w float64) {

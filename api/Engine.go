@@ -511,9 +511,9 @@ func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOpti
 	engine.rotZ = Identity4x4()
 	engine.trans = Identity4x4()
 	engine.camera = Vector3d{
-		X: 2,
-		Y: 0,
-		Z: 0,
+		X: 0.5,
+		Y: 0.5,
+		Z: 4.5,
 		W: 1,
 	}
 
