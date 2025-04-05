@@ -67,51 +67,51 @@ type Engine struct {
 	Metrics Metrics
 }
 
-func timestamp() float64 {
-	return float64(time.Now().UnixMilli())
-}
-
 // AddMesh adds a mesh to the engine in order to be rendered
 func (e *Engine) AddMesh(mesh Mesh) {
 	e.meshes = append(e.meshes, mesh)
 }
 
-// Translate translates all meshes
-func (e *Engine) Translate(x, y, z float64) {
+// TranslateWorld translates all meshes
+func (e *Engine) TranslateWorld(x, y, z float64) {
 	e.trans.Translate(x, y, z)
 }
 
-// RotateX rotates all meshes on the X axis
-func (e *Engine) RotateX(radians float64) {
+// RotateWorldX rotates all meshes around origin on the X axis
+func (e *Engine) RotateWorldX(radians float64) {
 	e.rotX.RotateX(radians)
 }
 
-// RotateY rotates all meshes on the Y axis
-func (e *Engine) RotateY(radians float64) {
+// RotateWorldY rotates all meshes around origin on the Y axis
+func (e *Engine) RotateWorldY(radians float64) {
 	e.rotY.RotateY(radians)
 }
 
-// RotateZ rotates all meshes on the Z axis
-func (e *Engine) RotateZ(radians float64) {
+// RotateWorldZ rotates all meshes around origin on the Z axis
+func (e *Engine) RotateWorldZ(radians float64) {
 	e.rotZ.RotateZ(radians)
 }
 
-// SetCameraPosition sets the camera to the given position
-func (e *Engine) SetCameraPosition(x, y, z float64) {
+// SetCameraPositionAbsolute sets the camera to the given absolute position
+func (e *Engine) SetCameraPositionAbsolute(x, y, z, yaw, pitch float64) {
 	e.camera.X = x
 	e.camera.Y = y
 	e.camera.Z = z
+	e.yaw = yaw
+	e.pitch = pitch
 }
 
-// MoveCamera the camera by the given offsets
-func (e *Engine) MoveCamera(dx, dy, dz float64) {
+// SetCameraPositionRelative move the camera to a new position given the offsets
+func (e *Engine) SetCameraPositionRelative(dx, dy, dz, yaw, pitch float64) {
 	e.camera.X += dx
 	e.camera.Y += dy
 	e.camera.Z += dz
+	e.yaw += yaw
+	e.pitch += pitch
 }
 
 // Update recalculates the world matrix
-func (e *Engine) Update() {
+func (e *Engine) update() {
 	// Always start from the identity matrix
 	e.world = Identity4x4()
 
@@ -124,13 +124,17 @@ func (e *Engine) Update() {
 	up := Vector3d{X: 0, Y: 1, Z: 0}
 	target := Vector3d{X: 0, Y: 0, Z: 1}
 
-	// Apply camera rotations, X and Y axes are supported at the moment
-	// TODO: figure out why spinning the camera around the Z axis isn't working
-	cameraRotation := Identity4x4()
-	cameraRotation.RotateY(e.yaw)
-	cameraRotation.RotateX(e.pitch)
+	// Apply camera rotations
+	cameraYaw := Identity4x4()
+	cameraPitch := Identity4x4()
 
-	e.direction = cameraRotation.MulV(&target)
+	// TODO figure out why camera roll is not working
+	cameraYaw.RotateY(e.yaw)
+	cameraPitch.RotateX(e.pitch)
+
+	e.direction = cameraYaw.MulV(&target)
+	e.direction = cameraPitch.MulV(&e.direction)
+
 	target = e.camera.Add(&e.direction)
 
 	cameraMatrix := Identity4x4()
@@ -539,6 +543,7 @@ func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
 func (e *Engine) Render(userData UserData) {
 	start := time.Now().UnixMilli()
 
+	e.update()
 	e.depthBuffer.Clear()
 
 	totalTrianglesRendered := 0
@@ -549,6 +554,11 @@ func (e *Engine) Render(userData UserData) {
 	finish := time.Now().UnixMilli()
 	e.Metrics.RenderTime = finish - start
 	e.Metrics.Triangles = totalTrianglesRendered
+}
+
+// Radians converts degrees to radians
+func ToRadians(degrees float64) float64 {
+	return degrees * (math.Pi / 180)
 }
 
 // NewEngine creates a new 3d engine instance with the given internal
@@ -568,7 +578,7 @@ func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOpti
 	}
 
 	aspectRatio := float64(w) / float64(h)
-	fov := 1.0 / math.Tan(fovDegrees*0.5/180*math.Pi)
+	fov := 1.0 / math.Tan(ToRadians(fovDegrees/2))
 	engine.projection = Projection4x4(fov, aspectRatio, 0.1, 1000)
 	engine.depthBuffer = NewDepthBuffer(w, h)
 	engine.drawPixel = drawHook

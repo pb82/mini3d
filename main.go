@@ -59,11 +59,6 @@ func (g *Game) Update() error {
 	delta := milliseconds - g.milliseconds
 	g.milliseconds = milliseconds
 	g.elapsedTime += delta
-
-	g.Engine.RotateY(g.elapsedTime / 1000)
-	g.Engine.RotateX(g.elapsedTime / 1000)
-
-	g.Engine.Update()
 	return nil
 }
 
@@ -85,7 +80,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.Engine.Render(g.canvas)
 	screen.WritePixels(g.canvas)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("%.0f FPS, %d tris, %d rt", ebiten.ActualFPS(), g.Engine.Metrics.Triangles, g.Engine.Metrics.RenderTime))
-
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -93,151 +87,13 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
-	mesh := api.Mesh{}
-
-	// Side 1
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 0, 0},
-			{0, 1, 0},
-			{1, 1, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 0, 0},
-			{1, 1, 0},
-			{1, 0, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
-
-	// Side 2
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 0},
-			{1, 1, 0},
-			{1, 1, 1},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 0},
-			{1, 1, 1},
-			{1, 0, 1},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
-
-	// Side 3
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 1},
-			{1, 1, 1},
-			{0, 1, 1},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 1},
-			{0, 1, 1},
-			{0, 0, 1},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
-
-	// Side 4
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 0, 1},
-			{0, 1, 1},
-			{0, 1, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 0, 1},
-			{0, 1, 0},
-			{0, 0, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
-
-	// Side 5
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 1, 0},
-			{0, 1, 1},
-			{1, 1, 1},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{0, 1, 0},
-			{1, 1, 1},
-			{1, 1, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
-
-	// Side 6
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 1},
-			{0, 0, 1},
-			{0, 0, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{0, 0},
-			{1, 0},
-		}))
-	mesh = append(mesh, api.TexturedTriangleFromMatrix(
-		api.Matrix3x3{
-			{1, 0, 1},
-			{0, 0, 0},
-			{1, 0, 0},
-		},
-		api.Matrix3x2{
-			{0, 1},
-			{1, 0},
-			{1, 1},
-		}))
+	mesh := api.StandardCube()
+	d1 := mesh.Copy()
+	d2 := mesh.Copy()
+	d3 := mesh.Copy()
+	d1.SetMeshPositionRelative(0, 0, 1)
+	d2.SetMeshPositionRelative(0, 0, 2)
+	d3.SetMeshPositionRelative(0, 0, 3)
 
 	atlas := &TextureAtlasImpl{}
 	atlas.LoadTexture()
@@ -248,8 +104,12 @@ func main() {
 
 	engine := api.NewEngine(256, 256, 90, draw, opts)
 	engine.AddMesh(mesh)
-	engine.Translate(0, 0, 5)
-	engine.SetCameraPosition(0, 0, 3)
+	engine.AddMesh(d1)
+	engine.AddMesh(d2)
+	engine.AddMesh(d3)
+
+	engine.TranslateWorld(0, 0, 5)
+	engine.SetCameraPositionAbsolute(0, 3, 0, 0, 0)
 
 	game := &Game{
 		Engine:       engine,

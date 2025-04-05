@@ -16,6 +16,26 @@ type Triangle struct {
 	Color color.Color
 }
 
+// Copy returns a new triangle with exactly the same properties
+func (t *Triangle) Copy() Triangle {
+	duplicate := Triangle{}
+	duplicate.Vertices[0] = t.Vertices[0].Copy()
+	duplicate.Vertices[1] = t.Vertices[1].Copy()
+	duplicate.Vertices[2] = t.Vertices[2].Copy()
+	duplicate.UVs = t.UVs.Copy()
+	duplicate.Color = t.Color
+	return duplicate
+}
+
+// SetTrianglePositionRelative move the triangle to a new position given relative offsets
+func (t *Triangle) SetTrianglePositionRelative(dx, dy, dz float64) {
+	for i := range t.Vertices {
+		t.Vertices[i].X += dx
+		t.Vertices[i].Y += dy
+		t.Vertices[i].Z += dz
+	}
+}
+
 // RGBA returns the color components of the triangle, implementing the
 // `Color` interface
 func (t *Triangle) RGBA() (r, g, b, a uint32) {

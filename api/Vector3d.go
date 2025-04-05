@@ -10,6 +10,16 @@ type Vector3d struct {
 	W float64
 }
 
+// Copy returns a new `Vector3d` with the same coordinates
+func (v *Vector3d) Copy() Vector3d {
+	return Vector3d{
+		X: v.X,
+		Y: v.Y,
+		Z: v.Z,
+		W: v.W,
+	}
+}
+
 // Add adds `other` to `v`, producing a new vector
 // The `W` component is not affected by this operation
 func (v *Vector3d) Add(other *Vector3d) Vector3d {
