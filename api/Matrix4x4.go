@@ -1,6 +1,8 @@
 package api
 
-import "math"
+import (
+	"math"
+)
 
 // Matrix4x4 represents a 4 by 4 matrix
 type Matrix4x4 [4][4]float64

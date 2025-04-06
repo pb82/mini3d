@@ -104,12 +104,12 @@ func main() {
 
 	engine := api.NewEngine(256, 256, 90, draw, opts)
 	engine.AddMesh(mesh)
-	engine.AddMesh(d1)
-	engine.AddMesh(d2)
-	engine.AddMesh(d3)
+	//engine.AddMesh(d1)
+	//engine.AddMesh(d2)
+	//engine.AddMesh(d3)
 
-	engine.TranslateWorld(0, 0, 5)
-	engine.SetCameraPositionAbsolute(0, 3, 0, 0, 0)
+	// engine.TranslateWorld(0, 0, 5)
+	engine.SetCameraPositionAbsolute(0, 0, -3, 0, 0)
 
 	game := &Game{
 		Engine:       engine,

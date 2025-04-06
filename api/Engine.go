@@ -19,6 +19,11 @@ type Engine struct {
 	// Rotation of all meshes on the X axis
 	rotX Matrix4x4
 
+	// For rotations around arbitrary points
+	rotXAround Matrix4x4
+	rotYAround Matrix4x4
+	rotZAround Matrix4x4
+
 	// Rotation of all meshes on the X axis
 	rotY Matrix4x4
 
@@ -65,6 +70,12 @@ type Engine struct {
 
 	// Metrics contains performance indicators
 	Metrics Metrics
+
+	// internal helper matrices for multistep rotations, e.g.
+	// translate, rotate, translate
+	helperMatrix1 Matrix4x4
+	helperMatrix2 Matrix4x4
+	helperMatrix3 Matrix4x4
 }
 
 // AddMesh adds a mesh to the engine in order to be rendered
@@ -80,6 +91,45 @@ func (e *Engine) TranslateWorld(x, y, z float64) {
 // RotateWorldX rotates all meshes around origin on the X axis
 func (e *Engine) RotateWorldX(radians float64) {
 	e.rotX.RotateX(radians)
+}
+
+// RotateWorldAroundX rotates all meshes around a given point on the X axis
+func (e *Engine) RotateWorldAroundX(radians float64, y, z float64) {
+	e.helperMatrix1 = Identity4x4()
+	e.helperMatrix1.Translate(0, y, z)
+	e.helperMatrix2 = Identity4x4()
+	e.helperMatrix2.RotateX(radians)
+	e.helperMatrix3 = Identity4x4()
+	e.helperMatrix3.Translate(0, -y, -z)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
+	e.rotXAround = e.helperMatrix1
+}
+
+// RotateWorldAroundY rotates all meshes around a given point on the X axis
+func (e *Engine) RotateWorldAroundY(radians float64, x, z float64) {
+	e.helperMatrix1 = Identity4x4()
+	e.helperMatrix1.Translate(x, 0, z)
+	e.helperMatrix2 = Identity4x4()
+	e.helperMatrix2.RotateY(radians)
+	e.helperMatrix3 = Identity4x4()
+	e.helperMatrix3.Translate(x, 0, -z)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
+	e.rotYAround = e.helperMatrix1
+}
+
+// RotateWorldAroundZ rotates all meshes around a given point on the X axis
+func (e *Engine) RotateWorldAroundZ(radians float64, x, y float64) {
+	e.helperMatrix1 = Identity4x4()
+	e.helperMatrix1.Translate(x, y, 0)
+	e.helperMatrix2 = Identity4x4()
+	e.helperMatrix2.RotateZ(radians)
+	e.helperMatrix3 = Identity4x4()
+	e.helperMatrix3.Translate(x, y, 0)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
+	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
+	e.rotZAround = e.helperMatrix1
 }
 
 // RotateWorldY rotates all meshes around origin on the Y axis
@@ -120,7 +170,10 @@ func (e *Engine) update() {
 	e.world = e.world.MulM(&e.rotY)
 	e.world = e.world.MulM(&e.rotZ)
 	e.world = e.world.MulM(&e.trans)
-
+	e.world = e.world.MulM(&e.rotXAround)
+	e.world = e.world.MulM(&e.rotYAround)
+	e.world = e.world.MulM(&e.rotZAround)
+	
 	up := Vector3d{X: 0, Y: 1, Z: 0}
 	target := Vector3d{X: 0, Y: 0, Z: 1}
 
@@ -134,7 +187,6 @@ func (e *Engine) update() {
 
 	e.direction = cameraYaw.MulV(&target)
 	e.direction = cameraPitch.MulV(&e.direction)
-
 	target = e.camera.Add(&e.direction)
 
 	cameraMatrix := Identity4x4()
@@ -570,13 +622,15 @@ func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOpti
 	engine.rotY = Identity4x4()
 	engine.rotZ = Identity4x4()
 	engine.trans = Identity4x4()
+	engine.rotXAround = Identity4x4()
+	engine.rotYAround = Identity4x4()
+	engine.rotZAround = Identity4x4()
 	engine.camera = Vector3d{
 		X: 0,
 		Y: 0,
 		Z: 0,
 		W: 1,
 	}
-
 	aspectRatio := float64(w) / float64(h)
 	fov := 1.0 / math.Tan(ToRadians(fovDegrees/2))
 	engine.projection = Projection4x4(fov, aspectRatio, 0.1, 1000)
