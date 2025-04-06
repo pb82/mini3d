@@ -101,10 +101,10 @@ func (e *Engine) updateCamera() {
 func (e *Engine) update(m *Mesh) {
 	// Apply rotations and translations to the world matrix
 	m.world = Identity4x4()
+	m.world = m.world.MulM(&m.trans)
 	m.world = m.world.MulM(&m.rotX)
 	m.world = m.world.MulM(&m.rotY)
 	m.world = m.world.MulM(&m.rotZ)
-	m.world = m.world.MulM(&m.trans)
 	m.world = m.world.MulM(&m.rotXAround)
 	m.world = m.world.MulM(&m.rotYAround)
 	m.world = m.world.MulM(&m.rotZAround)
@@ -194,7 +194,7 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 	}
 
 	if dy1 >= 0 {
-		if e.textureAtlas == nil && triangle.Color != nil {
+		if triangle.Color != nil {
 			for i := y1; i <= y2; i++ {
 				ax := float64(x1) + float64(i-y1)*daxStep
 				bx := float64(x1) + float64(i-y1)*dbxStep
@@ -303,7 +303,7 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 	}
 
 	if dy1 >= 0 {
-		if e.textureAtlas == nil && triangle.Color != nil {
+		if triangle.Color != nil {
 			for i := y2; i <= y3; i++ {
 				ax := float64(x2) + float64(i-y2)*daxStep
 				bx := float64(x1) + float64(i-y1)*dbxStep

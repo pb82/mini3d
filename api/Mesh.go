@@ -36,6 +36,7 @@ type Mesh struct {
 	// Keep track of the position and the dimensions of the bounding box
 	minX, minY, minZ float64
 	maxX, maxY, maxZ float64
+	position         Vector3d
 }
 
 // NewMesh creates a new mesh instance, with sane initial values
@@ -91,7 +92,8 @@ func (m *Mesh) AddTriangles(triangles []Triangle) {
 	}
 }
 
-func (m *Mesh) GetPosition() Vector3d {
+// GetOrigin return the origin coordinate of the bounding box of the mesh
+func (m *Mesh) GetOrigin() Vector3d {
 	return Vector3d{
 		X: m.minX,
 		Y: m.minY,
@@ -99,6 +101,12 @@ func (m *Mesh) GetPosition() Vector3d {
 	}
 }
 
+// GetPosition return the current translate position
+func (m *Mesh) GetPosition() Vector3d {
+	return m.position
+}
+
+// GetBoundingBox return the dimensions of the bounding nox of the mesh
 func (m *Mesh) GetBoundingBox() Vector3d {
 	v := Vector3d{
 		X: m.maxX - m.minX,
@@ -109,69 +117,93 @@ func (m *Mesh) GetBoundingBox() Vector3d {
 	return v
 }
 
+func (m *Mesh) reset() {
+	m.minX = 99999
+	m.maxX = -99999
+	m.minY = 99999
+	m.maxX = -99999
+	m.minZ = 99999
+	m.maxZ = -99999
+}
+
+func (m *Mesh) Move(dx, dy, dz float64) {
+	m.reset()
+	for i := range m.triangles {
+		for v := range m.triangles[i].Vertices {
+			m.triangles[i].Vertices[v].X += dx
+			m.triangles[i].Vertices[v].Y += dy
+			m.triangles[i].Vertices[v].Z += dz
+			m.updateBoundingBox(&m.triangles[i].Vertices[v])
+		}
+	}
+}
+
 // TranslateWorld translates all meshes
-func (e *Mesh) TranslateWorld(x, y, z float64) {
-	e.trans.Translate(x, y, z)
-	e.minX -= x
-	e.maxX += x
-	e.minY += y
-	e.maxY += y
-	e.minZ += z
-	e.maxZ += z
+func (m *Mesh) TranslateWorld(x, y, z float64) {
+	m.trans.Translate(x, y, z)
+	m.minX += x
+	m.maxX += x
+	m.minY += y
+	m.maxY += y
+	m.minZ += z
+	m.maxZ += z
+	m.position.X = x
+	m.position.Y = y
+	m.position.Z = z
 }
 
 // RotateWorldX rotates all meshes around origin on the X axis
-func (e *Mesh) RotateWorldX(radians float64) {
-	e.rotX.RotateX(radians)
+func (m *Mesh) RotateWorldX(radians float64) {
+	m.rotX.RotateX(radians)
 }
 
 // RotateWorldAroundX rotates all meshes around a given point on the X axis
-func (e *Mesh) RotateWorldAroundX(radians float64, y, z float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(0, y, z)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateX(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(0, -y, -z)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotXAround = e.helperMatrix1
+func (m *Mesh) RotateWorldAroundX(radians float64, y, z float64) {
+	m.helperMatrix1 = Identity4x4()
+	m.helperMatrix1.Translate(0, y, z)
+	m.helperMatrix2 = Identity4x4()
+	m.helperMatrix2.RotateX(radians)
+	m.helperMatrix3 = Identity4x4()
+	m.helperMatrix3.Translate(0, -y, -z)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix2)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix3)
+	m.rotXAround = m.helperMatrix1
 }
 
 // RotateWorldAroundY rotates all meshes around a given point on the X axis
-func (e *Mesh) RotateWorldAroundY(radians float64, x, z float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(x, 0, z)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateY(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(-x, 0, -z)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotYAround = e.helperMatrix1
+func (m *Mesh) RotateWorldAroundY(radians float64, x, z float64) {
+	m.helperMatrix1 = Identity4x4()
+	m.helperMatrix1.Translate(x, 0, z)
+	m.helperMatrix2 = Identity4x4()
+	m.helperMatrix2.RotateY(radians)
+	m.helperMatrix3 = Identity4x4()
+	m.helperMatrix3.Translate(-x, 0, -z)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix2)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix3)
+	m.rotYAround = m.helperMatrix1
 }
 
 // RotateWorldAroundZ rotates all meshes around a given point on the X axis
-func (e *Mesh) RotateWorldAroundZ(radians float64, x, y float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(x, y, 0)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateZ(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(-x, -y, 0)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotZAround = e.helperMatrix1
+func (m *Mesh) RotateWorldAroundZ(radians float64, x, y float64) {
+	m.helperMatrix1 = Identity4x4()
+	m.helperMatrix1.Translate(x, y, 0)
+	m.helperMatrix2 = Identity4x4()
+	m.helperMatrix2.RotateZ(radians)
+	m.helperMatrix3 = Identity4x4()
+	m.helperMatrix3.Translate(-x, -y, 0)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix2)
+	m.helperMatrix1 = m.helperMatrix1.MulM(&m.helperMatrix3)
+	m.rotZAround = m.helperMatrix1
 }
 
 // RotateWorldY rotates all meshes around origin on the Y axis
-func (e *Mesh) RotateWorldY(radians float64) {
-	e.rotY.RotateY(radians)
+func (m *Mesh) RotateWorldY(radians float64) {
+	m.rotY.RotateY(radians)
 }
 
 // RotateWorldZ rotates all meshes around origin on the Z axis
-func (e *Mesh) RotateWorldZ(radians float64) {
-	e.rotZ.RotateZ(radians)
+func (m *Mesh) RotateWorldZ(radians float64) {
+	m.rotZ.RotateZ(radians)
 }
 
 // Copy returns a new mesh with copies of the same triangles

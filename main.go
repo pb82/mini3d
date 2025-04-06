@@ -61,10 +61,15 @@ func (g *Game) Update() error {
 	g.milliseconds = milliseconds
 	g.elapsedTime += delta
 
-	g.meshes[0].RotateWorldAroundX(1*g.elapsedTime/1000,
-		-g.meshes[0].GetPosition().Y-g.meshes[0].GetBoundingBox().Y/2,
-		-g.meshes[0].GetPosition().Z-g.meshes[0].GetBoundingBox().Z/2)
+	// g.meshes[0].Move(0, 0, 1*delta/1000)
+	// p := g.meshes[0].GetPosition()
+	g.meshes[0].TranslateWorld(0, 0, -1*g.elapsedTime/1000)
 
+	/*
+		g.meshes[0].RotateWorldAroundX(1*g.elapsedTime/1000,
+			-g.meshes[0].GetOrigin().Y-g.meshes[0].GetBoundingBox().Y/2,
+			-g.meshes[0].GetOrigin().Z-g.meshes[0].GetBoundingBox().Z/2)
+	*/
 	// g.meshes[1].RotateWorldAroundY(1*g.elapsedTime/1000, -g.meshes[1].GetPosition().X-.5, -g.meshes[1].GetPosition().Z-.5)
 	// g.meshes[2].RotateWorldAroundZ(1*g.elapsedTime/1000, -g.meshes[2].GetPosition().X-.5, -g.meshes[2].GetPosition().Y-.5)
 
@@ -96,11 +101,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
-	// mesh1 := api.StandardCube()
-	mesh1, err := api.LoadWavefrontObj("./cube4.obj")
-	if err != nil {
-		panic(err)
-	}
+	mesh1 := api.StandardCube()
+	mesh2 := api.ColoredCube()
 
 	atlas := &TextureAtlasImpl{}
 	atlas.LoadTexture()
@@ -109,8 +111,12 @@ func main() {
 		TextureAtlas: atlas,
 	}
 
+	mesh2.TranslateWorld(1, 1, 0)
+	mesh2.TranslateWorld(1, 1, 0)
+
 	engine := api.NewEngine(256, 256, 90, draw, opts)
 	engine.AddMesh(mesh1)
+	engine.AddMesh(mesh2)
 
 	engine.SetCameraPositionAbsolute(0, 0, -5, 0, 0)
 
