@@ -59,6 +59,10 @@ func (g *Game) Update() error {
 	delta := milliseconds - g.milliseconds
 	g.milliseconds = milliseconds
 	g.elapsedTime += delta
+
+	g.Engine.RotateWorldAroundY(1*g.elapsedTime/1000, -.5, -.5)
+	g.Engine.SetCameraPositionRelative(0, 0, -1*delta/2000, 0, 0)
+
 	return nil
 }
 
@@ -104,12 +108,12 @@ func main() {
 
 	engine := api.NewEngine(256, 256, 90, draw, opts)
 	engine.AddMesh(mesh)
-	//engine.AddMesh(d1)
-	//engine.AddMesh(d2)
-	//engine.AddMesh(d3)
+	engine.AddMesh(d1)
+	engine.AddMesh(d2)
+	engine.AddMesh(d3)
 
 	// engine.TranslateWorld(0, 0, 5)
-	engine.SetCameraPositionAbsolute(0, 0, -3, 0, 0)
+	engine.SetCameraPositionAbsolute(0, 0, -2, 0, 0)
 
 	game := &Game{
 		Engine:       engine,

@@ -14,7 +14,7 @@ type Engine struct {
 	W, H float64
 
 	// List of meshes to render
-	meshes []Mesh
+	meshes []*Mesh
 
 	// Rotation of all meshes on the X axis
 	rotX Matrix4x4
@@ -79,7 +79,7 @@ type Engine struct {
 }
 
 // AddMesh adds a mesh to the engine in order to be rendered
-func (e *Engine) AddMesh(mesh Mesh) {
+func (e *Engine) AddMesh(mesh *Mesh) {
 	e.meshes = append(e.meshes, mesh)
 }
 
@@ -160,20 +160,8 @@ func (e *Engine) SetCameraPositionRelative(dx, dy, dz, yaw, pitch float64) {
 	e.pitch += pitch
 }
 
-// Update recalculates the world matrix
-func (e *Engine) update() {
-	// Always start from the identity matrix
-	e.world = Identity4x4()
-
-	// Apply rotations and translations to the world matrix
-	e.world = e.world.MulM(&e.rotX)
-	e.world = e.world.MulM(&e.rotY)
-	e.world = e.world.MulM(&e.rotZ)
-	e.world = e.world.MulM(&e.trans)
-	e.world = e.world.MulM(&e.rotXAround)
-	e.world = e.world.MulM(&e.rotYAround)
-	e.world = e.world.MulM(&e.rotZAround)
-	
+// updateCamera updates the global camera
+func (e *Engine) updateCamera() {
 	up := Vector3d{X: 0, Y: 1, Z: 0}
 	target := Vector3d{X: 0, Y: 0, Z: 1}
 
@@ -192,6 +180,19 @@ func (e *Engine) update() {
 	cameraMatrix := Identity4x4()
 	cameraMatrix.PointAt(&e.camera, &target, &up)
 	e.view = cameraMatrix.Inverse()
+}
+
+// Update recalculates the world matrix
+func (e *Engine) update(m *Mesh) {
+	// Apply rotations and translations to the world matrix
+	e.world = Identity4x4()
+	e.world = e.world.MulM(&e.rotX)
+	e.world = e.world.MulM(&e.rotY)
+	e.world = e.world.MulM(&e.rotZ)
+	e.world = e.world.MulM(&e.trans)
+	e.world = e.world.MulM(&e.rotXAround)
+	e.world = e.world.MulM(&e.rotYAround)
+	e.world = e.world.MulM(&e.rotZAround)
 }
 
 // drawTriangle draw all pixels of a triangle. Supports textured and colored
@@ -470,12 +471,12 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 }
 
 // renderMesh renders a single mesh
-func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
+func (e *Engine) renderMesh(mesh *Mesh, userData UserData) int {
 	// trianglesToRaster holds all visible triangles
 	var trianglesToRaster []Triangle
 	totalTrianglesRendered := 0
 
-	for _, triangle := range mesh {
+	for _, triangle := range mesh.Triangles {
 		// make copies of all triangle to avoid in place modification
 		triangleTransformed := Triangle{}
 
@@ -595,11 +596,12 @@ func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
 func (e *Engine) Render(userData UserData) {
 	start := time.Now().UnixMilli()
 
-	e.update()
 	e.depthBuffer.Clear()
+	e.updateCamera()
 
 	totalTrianglesRendered := 0
 	for _, mesh := range e.meshes {
+		e.update(mesh)
 		totalTrianglesRendered += e.renderMesh(mesh, userData)
 	}
 
@@ -617,7 +619,7 @@ func ToRadians(degrees float64) float64 {
 // width and height
 func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOptions) *Engine {
 	engine := &Engine{w: w, h: h, W: float64(w), H: float64(h)}
-	engine.meshes = make([]Mesh, 0)
+	engine.meshes = make([]*Mesh, 0)
 	engine.rotX = Identity4x4()
 	engine.rotY = Identity4x4()
 	engine.rotZ = Identity4x4()

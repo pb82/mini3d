@@ -8,26 +8,30 @@ import (
 	"strings"
 )
 
-type Mesh []Triangle
+// type Mesh []Triangle
+
+type Mesh struct {
+	Triangles []Triangle
+}
 
 // Copy returns a new mesh with copies of the same triangles
-func (m *Mesh) Copy() Mesh {
-	duplicate := Mesh{}
-	for _, t := range *m {
-		duplicate = append(duplicate, t.Copy())
+func (m *Mesh) Copy() *Mesh {
+	duplicate := &Mesh{}
+	for _, t := range m.Triangles {
+		duplicate.Triangles = append(duplicate.Triangles, t.Copy())
 	}
 	return duplicate
 }
 
 // SetMeshPositionRelative move the whole mesh to a new position given relative coordinates
 func (m *Mesh) SetMeshPositionRelative(dx, dy, dz float64) {
-	for i := range *m {
-		(*m)[i].SetTrianglePositionRelative(dx, dy, dz)
+	for i := range m.Triangles {
+		m.Triangles[i].SetTrianglePositionRelative(dx, dy, dz)
 	}
 }
 
 // LoadWavefrontObj implements rudimentary Wavefront obj file format support
-func LoadWavefrontObj(filename string) (Mesh, error) {
+func LoadWavefrontObj(filename string) (*Mesh, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -39,12 +43,12 @@ func LoadWavefrontObj(filename string) (Mesh, error) {
 		}
 	}()
 
-	result := Mesh{}
+	result := &Mesh{}
 
 	// Arrays to contain all vertices and uvs found in the file
 	// They will later be referenced from face information
-	vertices := []Vector3d{}
-	uvs := []VectorUv{}
+	var vertices []Vector3d
+	var uvs []VectorUv
 
 	parseUV := func(line string, lineNumber int) (*VectorUv, error) {
 		parts := strings.Split(line, " ")
@@ -164,7 +168,7 @@ func LoadWavefrontObj(filename string) (Mesh, error) {
 	}
 
 	parseFaceWithTexture := func(line string, lineNumber int) ([]Triangle, error) {
-		triangles := []Triangle{}
+		var triangles []Triangle
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			vertexA, uvA, err := parseVertexWithTexture(parts[0], lineNumber)
@@ -257,13 +261,13 @@ func LoadWavefrontObj(filename string) (Mesh, error) {
 				if err != nil {
 					return nil, err
 				}
-				result = append(result, triangles...)
+				result.Triangles = append(result.Triangles, triangles...)
 			} else {
 				triangles, err := parseFaceWithTexture(currentLine[2:], lineNumber)
 				if err != nil {
 					return nil, err
 				}
-				result = append(result, triangles...)
+				result.Triangles = append(result.Triangles, triangles...)
 			}
 		}
 	}
