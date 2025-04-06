@@ -3,10 +3,10 @@ package api
 // StandardCube returns a standard cube with the dimensions 1x1x1 at origin 0/0/0
 // UV coordinates are set to map the whole texture from 0/0 to 1/1
 func StandardCube() *Mesh {
-	mesh := &Mesh{}
+	mesh := NewMesh()
 
 	// Side 1
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 0, 0},
 			{0, 1, 0},
@@ -17,7 +17,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 0, 0},
 			{1, 1, 0},
@@ -30,7 +31,7 @@ func StandardCube() *Mesh {
 		}))
 
 	// Side 2
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 0},
 			{1, 1, 0},
@@ -41,7 +42,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 0},
 			{1, 1, 1},
@@ -54,7 +56,7 @@ func StandardCube() *Mesh {
 		}))
 
 	// Side 3
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 1},
 			{1, 1, 1},
@@ -65,7 +67,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 1},
 			{0, 1, 1},
@@ -78,7 +81,7 @@ func StandardCube() *Mesh {
 		}))
 
 	// Side 4
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 0, 1},
 			{0, 1, 1},
@@ -89,7 +92,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 0, 1},
 			{0, 1, 0},
@@ -102,7 +106,7 @@ func StandardCube() *Mesh {
 		}))
 
 	// Side 5
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 1, 0},
 			{0, 1, 1},
@@ -113,7 +117,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{0, 1, 0},
 			{1, 1, 1},
@@ -126,7 +131,7 @@ func StandardCube() *Mesh {
 		}))
 
 	// Side 6
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 1},
 			{0, 0, 1},
@@ -137,7 +142,8 @@ func StandardCube() *Mesh {
 			{0, 0},
 			{1, 0},
 		}))
-	mesh.Triangles = append(mesh.Triangles, TexturedTriangleFromMatrix(
+
+	mesh.AddTriangle(TexturedTriangleFromMatrix(
 		Matrix3x3{
 			{1, 0, 1},
 			{0, 0, 0},

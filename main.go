@@ -52,6 +52,7 @@ type Game struct {
 	milliseconds float64
 	elapsedTime  float64
 	canvas       []byte
+	meshes       []*api.Mesh
 }
 
 func (g *Game) Update() error {
@@ -60,8 +61,12 @@ func (g *Game) Update() error {
 	g.milliseconds = milliseconds
 	g.elapsedTime += delta
 
-	g.Engine.RotateWorldAroundY(1*g.elapsedTime/1000, -.5, -.5)
-	g.Engine.SetCameraPositionRelative(0, 0, -1*delta/2000, 0, 0)
+	g.meshes[0].RotateWorldAroundX(1*g.elapsedTime/1000,
+		-g.meshes[0].GetPosition().Y-g.meshes[0].GetBoundingBox().Y/2,
+		-g.meshes[0].GetPosition().Z-g.meshes[0].GetBoundingBox().Z/2)
+
+	// g.meshes[1].RotateWorldAroundY(1*g.elapsedTime/1000, -g.meshes[1].GetPosition().X-.5, -g.meshes[1].GetPosition().Z-.5)
+	// g.meshes[2].RotateWorldAroundZ(1*g.elapsedTime/1000, -g.meshes[2].GetPosition().X-.5, -g.meshes[2].GetPosition().Y-.5)
 
 	return nil
 }
@@ -91,13 +96,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
-	mesh := api.StandardCube()
-	d1 := mesh.Copy()
-	d2 := mesh.Copy()
-	d3 := mesh.Copy()
-	d1.SetMeshPositionRelative(0, 0, 1)
-	d2.SetMeshPositionRelative(0, 0, 2)
-	d3.SetMeshPositionRelative(0, 0, 3)
+	// mesh1 := api.StandardCube()
+	mesh1, err := api.LoadWavefrontObj("./cube4.obj")
+	if err != nil {
+		panic(err)
+	}
 
 	atlas := &TextureAtlasImpl{}
 	atlas.LoadTexture()
@@ -107,18 +110,15 @@ func main() {
 	}
 
 	engine := api.NewEngine(256, 256, 90, draw, opts)
-	engine.AddMesh(mesh)
-	engine.AddMesh(d1)
-	engine.AddMesh(d2)
-	engine.AddMesh(d3)
+	engine.AddMesh(mesh1)
 
-	// engine.TranslateWorld(0, 0, 5)
-	engine.SetCameraPositionAbsolute(0, 0, -2, 0, 0)
+	engine.SetCameraPositionAbsolute(0, 0, -5, 0, 0)
 
 	game := &Game{
 		Engine:       engine,
 		milliseconds: float64(time.Now().UnixMilli()),
 		canvas:       make([]byte, 256*256*4),
+		meshes:       []*api.Mesh{mesh1},
 	}
 
 	ebiten.SetWindowSize(800, 800)
