@@ -75,6 +75,11 @@ func (e *Engine) SetCameraPositionRelative(dx, dy, dz, yaw, pitch float64) {
 	e.pitch += pitch
 }
 
+func (e *Engine) MoveCameraForward(amount float64) {
+	forward := e.direction.Mul(amount)
+	e.camera = e.camera.Add(&forward)
+}
+
 // updateCamera updates the global camera
 func (e *Engine) updateCamera() {
 	up := Vector3d{X: 0, Y: 1, Z: 0}
@@ -95,6 +100,7 @@ func (e *Engine) updateCamera() {
 	cameraMatrix := Identity4x4()
 	cameraMatrix.PointAt(&e.camera, &target, &up)
 	e.view = cameraMatrix.Inverse()
+
 }
 
 // Update recalculates the world matrix
