@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/pb82/mini3d/api"
 	"image"
 	"image/color"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	_ "embed"
+	_ "image/jpeg"
 	_ "image/png"
 )
 
@@ -52,6 +54,7 @@ type Game struct {
 	milliseconds float64
 	elapsedTime  float64
 	canvas       []byte
+	meshes       []*api.Mesh
 }
 
 func (g *Game) Update() error {
@@ -59,14 +62,30 @@ func (g *Game) Update() error {
 	delta := milliseconds - g.milliseconds
 	g.milliseconds = milliseconds
 	g.elapsedTime += delta
+
+	keys := inpututil.AppendPressedKeys([]ebiten.Key{ebiten.KeyUp, ebiten.KeyDown, ebiten.KeyLeft, ebiten.KeyRight})
+	for _, key := range keys {
+		if key == ebiten.KeyW {
+			g.Engine.MoveCameraForward(1 * delta / 500)
+		}
+		if key == ebiten.KeyS {
+			g.Engine.MoveCameraForward(-1 * delta / 500)
+		}
+		if key == ebiten.KeyA {
+			g.Engine.SetCameraPositionRelative(0, 0, 0, -1*delta/1000, 0)
+		}
+		if key == ebiten.KeyD {
+			g.Engine.SetCameraPositionRelative(0, 0, 0, 1*delta/1000, 0)
+		}
+	}
+
 	return nil
 }
 
 func draw(x, y int, c color.Color, userData api.UserData) {
 	canvas := userData.([]byte)
-	// screen.Set(x, y, c)
 	r, g, b, a := c.RGBA()
-	pos := (y * 256 * 4) + x*4
+	pos := (y * InternalWidth * 4) + x*4
 	canvas[pos] = byte(r >> 8)
 	canvas[pos+1] = byte(g >> 8)
 	canvas[pos+2] = byte(b >> 8)
@@ -88,12 +107,6 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func main() {
 	mesh := api.StandardCube()
-	d1 := mesh.Copy()
-	d2 := mesh.Copy()
-	d3 := mesh.Copy()
-	d1.SetMeshPositionRelative(0, 0, 1)
-	d2.SetMeshPositionRelative(0, 0, 2)
-	d3.SetMeshPositionRelative(0, 0, 3)
 
 	atlas := &TextureAtlasImpl{}
 	atlas.LoadTexture()
@@ -102,19 +115,17 @@ func main() {
 		TextureAtlas: atlas,
 	}
 
-	engine := api.NewEngine(256, 256, 90, draw, opts)
+	mesh.Translate(0, 0, 0)
+	engine := api.NewEngine(InternalWidth, InternalHeight, 90, draw, opts)
 	engine.AddMesh(mesh)
-	//engine.AddMesh(d1)
-	//engine.AddMesh(d2)
-	//engine.AddMesh(d3)
 
-	// engine.TranslateWorld(0, 0, 5)
-	engine.SetCameraPositionAbsolute(0, 0, -3, 0, 0)
+	engine.SetCameraPositionAbsolute(0, .5, -5, 0, 0)
 
 	game := &Game{
 		Engine:       engine,
 		milliseconds: float64(time.Now().UnixMilli()),
-		canvas:       make([]byte, 256*256*4),
+		canvas:       make([]byte, InternalWidth*InternalHeight*4),
+		meshes:       []*api.Mesh{mesh},
 	}
 
 	ebiten.SetWindowSize(800, 800)

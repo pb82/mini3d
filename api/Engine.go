@@ -14,27 +14,7 @@ type Engine struct {
 	W, H float64
 
 	// List of meshes to render
-	meshes []Mesh
-
-	// Rotation of all meshes on the X axis
-	rotX Matrix4x4
-
-	// For rotations around arbitrary points
-	rotXAround Matrix4x4
-	rotYAround Matrix4x4
-	rotZAround Matrix4x4
-
-	// Rotation of all meshes on the X axis
-	rotY Matrix4x4
-
-	// Rotation of all meshes on the X axis
-	rotZ Matrix4x4
-
-	// Translation of all meshes on all axes
-	trans Matrix4x4
-
-	// World matrix to apply all transformations to
-	world Matrix4x4
+	meshes []*Mesh
 
 	// Camera yaw angle in radians (left/right)
 	yaw float64
@@ -70,76 +50,11 @@ type Engine struct {
 
 	// Metrics contains performance indicators
 	Metrics Metrics
-
-	// internal helper matrices for multistep rotations, e.g.
-	// translate, rotate, translate
-	helperMatrix1 Matrix4x4
-	helperMatrix2 Matrix4x4
-	helperMatrix3 Matrix4x4
 }
 
 // AddMesh adds a mesh to the engine in order to be rendered
-func (e *Engine) AddMesh(mesh Mesh) {
+func (e *Engine) AddMesh(mesh *Mesh) {
 	e.meshes = append(e.meshes, mesh)
-}
-
-// TranslateWorld translates all meshes
-func (e *Engine) TranslateWorld(x, y, z float64) {
-	e.trans.Translate(x, y, z)
-}
-
-// RotateWorldX rotates all meshes around origin on the X axis
-func (e *Engine) RotateWorldX(radians float64) {
-	e.rotX.RotateX(radians)
-}
-
-// RotateWorldAroundX rotates all meshes around a given point on the X axis
-func (e *Engine) RotateWorldAroundX(radians float64, y, z float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(0, y, z)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateX(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(0, -y, -z)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotXAround = e.helperMatrix1
-}
-
-// RotateWorldAroundY rotates all meshes around a given point on the X axis
-func (e *Engine) RotateWorldAroundY(radians float64, x, z float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(x, 0, z)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateY(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(x, 0, -z)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotYAround = e.helperMatrix1
-}
-
-// RotateWorldAroundZ rotates all meshes around a given point on the X axis
-func (e *Engine) RotateWorldAroundZ(radians float64, x, y float64) {
-	e.helperMatrix1 = Identity4x4()
-	e.helperMatrix1.Translate(x, y, 0)
-	e.helperMatrix2 = Identity4x4()
-	e.helperMatrix2.RotateZ(radians)
-	e.helperMatrix3 = Identity4x4()
-	e.helperMatrix3.Translate(x, y, 0)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix2)
-	e.helperMatrix1 = e.helperMatrix1.MulM(&e.helperMatrix3)
-	e.rotZAround = e.helperMatrix1
-}
-
-// RotateWorldY rotates all meshes around origin on the Y axis
-func (e *Engine) RotateWorldY(radians float64) {
-	e.rotY.RotateY(radians)
-}
-
-// RotateWorldZ rotates all meshes around origin on the Z axis
-func (e *Engine) RotateWorldZ(radians float64) {
-	e.rotZ.RotateZ(radians)
 }
 
 // SetCameraPositionAbsolute sets the camera to the given absolute position
@@ -160,20 +75,13 @@ func (e *Engine) SetCameraPositionRelative(dx, dy, dz, yaw, pitch float64) {
 	e.pitch += pitch
 }
 
-// Update recalculates the world matrix
-func (e *Engine) update() {
-	// Always start from the identity matrix
-	e.world = Identity4x4()
+func (e *Engine) MoveCameraForward(amount float64) {
+	forward := e.direction.Mul(amount)
+	e.camera = e.camera.Add(&forward)
+}
 
-	// Apply rotations and translations to the world matrix
-	e.world = e.world.MulM(&e.rotX)
-	e.world = e.world.MulM(&e.rotY)
-	e.world = e.world.MulM(&e.rotZ)
-	e.world = e.world.MulM(&e.trans)
-	e.world = e.world.MulM(&e.rotXAround)
-	e.world = e.world.MulM(&e.rotYAround)
-	e.world = e.world.MulM(&e.rotZAround)
-	
+// updateCamera updates the global camera
+func (e *Engine) updateCamera() {
 	up := Vector3d{X: 0, Y: 1, Z: 0}
 	target := Vector3d{X: 0, Y: 0, Z: 1}
 
@@ -192,6 +100,19 @@ func (e *Engine) update() {
 	cameraMatrix := Identity4x4()
 	cameraMatrix.PointAt(&e.camera, &target, &up)
 	e.view = cameraMatrix.Inverse()
+}
+
+// Update recalculates the world matrix
+func (e *Engine) update(m *Mesh) {
+	// Apply rotations and translations to the world matrix
+	m.world = Identity4x4()
+	m.world = m.world.MulM(&m.trans)
+	m.world = m.world.MulM(&m.rotX)
+	m.world = m.world.MulM(&m.rotY)
+	m.world = m.world.MulM(&m.rotZ)
+	m.world = m.world.MulM(&m.rotXAround)
+	m.world = m.world.MulM(&m.rotYAround)
+	m.world = m.world.MulM(&m.rotZAround)
 }
 
 // drawTriangle draw all pixels of a triangle. Supports textured and colored
@@ -278,7 +199,7 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 	}
 
 	if dy1 >= 0 {
-		if e.textureAtlas == nil && triangle.Color != nil {
+		if triangle.Color != nil {
 			for i := y1; i <= y2; i++ {
 				ax := float64(x1) + float64(i-y1)*daxStep
 				bx := float64(x1) + float64(i-y1)*dbxStep
@@ -387,7 +308,7 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 	}
 
 	if dy1 >= 0 {
-		if e.textureAtlas == nil && triangle.Color != nil {
+		if triangle.Color != nil {
 			for i := y2; i <= y3; i++ {
 				ax := float64(x2) + float64(i-y2)*daxStep
 				bx := float64(x1) + float64(i-y1)*dbxStep
@@ -470,21 +391,21 @@ func (e *Engine) drawTriangle(triangle *Triangle, userData UserData) {
 }
 
 // renderMesh renders a single mesh
-func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
+func (e *Engine) renderMesh(mesh *Mesh, userData UserData) int {
 	// trianglesToRaster holds all visible triangles
 	var trianglesToRaster []Triangle
 	totalTrianglesRendered := 0
 
-	for _, triangle := range mesh {
+	for _, triangle := range mesh.triangles {
 		// make copies of all triangle to avoid in place modification
 		triangleTransformed := Triangle{}
 
 		// Apply the world matrix
 		triangleTransformed.UVs = triangle.UVs.Copy()
 		triangleTransformed.Color = triangle.Color
-		triangleTransformed.Vertices[0] = e.world.MulV(&triangle.Vertices[0])
-		triangleTransformed.Vertices[1] = e.world.MulV(&triangle.Vertices[1])
-		triangleTransformed.Vertices[2] = e.world.MulV(&triangle.Vertices[2])
+		triangleTransformed.Vertices[0] = mesh.world.MulV(&triangle.Vertices[0])
+		triangleTransformed.Vertices[1] = mesh.world.MulV(&triangle.Vertices[1])
+		triangleTransformed.Vertices[2] = mesh.world.MulV(&triangle.Vertices[2])
 
 		// Compute the normal for the triangle. They are used to determine if a triangle is visible
 		normal := triangleTransformed.Normal()
@@ -595,11 +516,12 @@ func (e *Engine) renderMesh(mesh Mesh, userData UserData) int {
 func (e *Engine) Render(userData UserData) {
 	start := time.Now().UnixMilli()
 
-	e.update()
 	e.depthBuffer.Clear()
+	e.updateCamera()
 
 	totalTrianglesRendered := 0
 	for _, mesh := range e.meshes {
+		e.update(mesh)
 		totalTrianglesRendered += e.renderMesh(mesh, userData)
 	}
 
@@ -608,7 +530,7 @@ func (e *Engine) Render(userData UserData) {
 	e.Metrics.Triangles = totalTrianglesRendered
 }
 
-// Radians converts degrees to radians
+// ToRadians converts degrees to radians
 func ToRadians(degrees float64) float64 {
 	return degrees * (math.Pi / 180)
 }
@@ -617,14 +539,7 @@ func ToRadians(degrees float64) float64 {
 // width and height
 func NewEngine(w, h int, fovDegrees float64, drawHook DrawHook, opts *EngineOptions) *Engine {
 	engine := &Engine{w: w, h: h, W: float64(w), H: float64(h)}
-	engine.meshes = make([]Mesh, 0)
-	engine.rotX = Identity4x4()
-	engine.rotY = Identity4x4()
-	engine.rotZ = Identity4x4()
-	engine.trans = Identity4x4()
-	engine.rotXAround = Identity4x4()
-	engine.rotYAround = Identity4x4()
-	engine.rotZAround = Identity4x4()
+	engine.meshes = make([]*Mesh, 0)
 	engine.camera = Vector3d{
 		X: 0,
 		Y: 0,
