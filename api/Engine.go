@@ -100,7 +100,6 @@ func (e *Engine) updateCamera() {
 	cameraMatrix := Identity4x4()
 	cameraMatrix.PointAt(&e.camera, &target, &up)
 	e.view = cameraMatrix.Inverse()
-
 }
 
 // Update recalculates the world matrix

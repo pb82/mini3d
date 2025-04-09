@@ -142,18 +142,6 @@ func (m *Mesh) MoveRelative(dx, dy, dz float64) {
 	}
 }
 
-func (m *Mesh) MoveAbsolute(x, y, z float64) {
-	m.reset()
-	for i := range m.triangles {
-		for v := range m.triangles[i].Vertices {
-			m.triangles[i].Vertices[v].X += -m.triangles[i].Vertices[v].X + x
-			m.triangles[i].Vertices[v].Y += -m.triangles[i].Vertices[v].Y + y
-			m.triangles[i].Vertices[v].Z += -m.triangles[i].Vertices[v].Z + z
-			m.updateBoundingBox(&m.triangles[i].Vertices[v])
-		}
-	}
-}
-
 // Translate translates the mesh to an absolute position
 func (m *Mesh) Translate(x, y, z float64) {
 	m.trans.Translate(x, y, z)
