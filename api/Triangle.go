@@ -151,7 +151,7 @@ func (t *Triangle) ClipAgainstPlane(p, n *Vector3d, triangleOut1, triangleOut2 *
 	// Two points lie outside of screen boundaries. We can clip the triangle into
 	// a new, smaller, triangle
 	if insidePointCount == 1 && outsidePointCount == 2 {
-		triangleOut2.Color = t.Color
+		triangleOut1.Color = t.Color
 
 		// Keep the inside vertex and UV
 		triangleOut1.Vertices[0] = *insidePoints[0]
