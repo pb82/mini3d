@@ -58,8 +58,8 @@ func (e *Engine) AddMesh(mesh *Mesh) {
 }
 
 // GetCameraPosition returns the current position of the camera
-func (e *Engine) GetCameraPosition() *Vector3d {
-	return &e.camera
+func (e *Engine) GetCameraPosition() (x, y, z, yaw, pitch float64) {
+	return e.camera.X, e.camera.Y, e.camera.Z, e.yaw, e.pitch
 }
 
 // SetCameraPositionAbsolute sets the camera to the given absolute position
