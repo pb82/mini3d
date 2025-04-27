@@ -57,6 +57,11 @@ func (e *Engine) AddMesh(mesh *Mesh) {
 	e.meshes = append(e.meshes, mesh)
 }
 
+// GetCameraPosition returns the current position of the camera
+func (e *Engine) GetCameraPosition() *Vector3d {
+	return &e.camera
+}
+
 // SetCameraPositionAbsolute sets the camera to the given absolute position
 func (e *Engine) SetCameraPositionAbsolute(x, y, z, yaw, pitch float64) {
 	e.camera.X = x
